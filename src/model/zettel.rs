@@ -1,5 +1,9 @@
+use std::str::FromStr;
+
 use chrono::NaiveDateTime;
 use serde::{Deserialize, Serialize};
+
+use crate::ZettariumError;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Zettel {
@@ -20,31 +24,18 @@ pub enum NoteType {
     Index,
 }
 
-#[derive(Debug)]
-pub enum NoteTypeParseError {
-    InvalidNoteType(String),
-}
+impl FromStr for NoteType {
+    type Err = ZettariumError;
 
-impl std::fmt::Display for NoteTypeParseError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            NoteTypeParseError::InvalidNoteType(r#type) => {
-                writeln!(f, "Unrecognized note type variant: {}", r#type)
-            }
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s.to_lowercase().as_str() {
+            "fleeting" | "f" => Ok(NoteType::Fleeting),
+            "permanent" | "p" => Ok(NoteType::Permanent),
+            "literature" | "l" => Ok(NoteType::Literature),
+            "structure" | "s" => Ok(NoteType::Structure),
+            "index" | "i" => Ok(NoteType::Index),
+            _ => Err(ZettariumError::InvalidNoteType(s.into())),
         }
-    }
-}
-
-impl std::error::Error for NoteTypeParseError {}
-
-pub fn parse_note_type(r#type: &str) -> Result<NoteType, NoteTypeParseError> {
-    match r#type {
-        "fleeting" | "f" => Ok(NoteType::Fleeting),
-        "permanent" | "p" => Ok(NoteType::Permanent),
-        "literature" | "l" => Ok(NoteType::Literature),
-        "structure" | "s" => Ok(NoteType::Structure),
-        "index" | "i" => Ok(NoteType::Index),
-        other => Err(NoteTypeParseError::InvalidNoteType(other.to_string())),
     }
 }
 
@@ -88,5 +79,16 @@ mod tests {
         let output = format!("{zettel}");
         assert!(output.contains("this is a test"));
         assert!(output.contains("Fleeting"));
+    }
+
+    #[test]
+    fn test_invalid_note_type_parse() {
+        let result = "invalid_type".parse::<NoteType>();
+        assert!(result.is_err());
+
+        if let Err(e) = result {
+            let msg = format!("{}", e);
+            assert!(msg.contains("Invalid note type"));
+        }
     }
 }
