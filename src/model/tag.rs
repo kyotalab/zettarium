@@ -15,6 +15,8 @@ impl std::fmt::Display for Tag {
 // Test
 #[cfg(test)]
 mod tests {
+    use crate::dedup_and_warn;
+
     use super::*;
 
     #[test]
@@ -28,5 +30,21 @@ mod tests {
             let output = format!("{tag}");
             assert!(output.contains(t));
         }
+    }
+
+    #[test]
+    fn test_dedup_and_warn_basic() {
+        let tags = vec![
+            "Rust".to_string(),
+            "rust".to_string(),
+            "cli".to_string(),
+            "CLI".to_string(),
+            "tool".to_string(),
+        ];
+        let deduped = dedup_and_warn(tags);
+        assert_eq!(deduped.len(), 3);
+        assert!(deduped.contains(&"Rust".to_string()));
+        assert!(deduped.contains(&"cli".to_string()));
+        assert!(deduped.contains(&"tool".to_string()));
     }
 }
