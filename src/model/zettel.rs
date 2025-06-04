@@ -67,3 +67,26 @@ impl std::fmt::Display for Zettel {
         Ok(())
     }
 }
+
+// Test
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use chrono::Local;
+
+    #[test]
+    fn test_zettel_creation_and_display() {
+        let zettel = Zettel {
+            id: "20250604170100".into(),
+            title: "this is a test".into(),
+            r#type: NoteType::Fleeting,
+            created: Local::now().naive_local(),
+            updated: Local::now().naive_local(),
+            archived: false,
+        };
+
+        let output = format!("{zettel}");
+        assert!(output.contains("this is a test"));
+        assert!(output.contains("Fleeting"));
+    }
+}
