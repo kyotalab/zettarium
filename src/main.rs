@@ -1,3 +1,7 @@
+use clap::Parser;
+use zettarium::{Cli, cli};
+
 fn main() {
-    println!("Hello, world!");
+    let cli = Cli::parse();
+    cli::dispatch(cli);
 }
