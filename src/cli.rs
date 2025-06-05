@@ -1,9 +1,11 @@
 use clap::{Parser, Subcommand};
+use anyhow::Result;
+use crate::handler::zettel::zettel_handler;
 
 #[derive(Parser)]
 pub struct Cli {
     #[command(subcommand)]
-    command: Commands,
+    pub command: Commands,
 }
 
 #[derive(Subcommand)]
@@ -25,16 +27,15 @@ pub enum Commands {
     // View {},
 }
 
-pub fn dispatch(cli: Cli) {
+pub fn dispatch(cli: Cli) -> Result<()> {
     match cli.command {
         Commands::New {
             title,
             r#type,
             tags,
         } => {
-            println!("{}", title);
-            println!("{}", r#type);
-            println!("{:?}", tags);
+            zettel_handler(&title, &r#type, &tags)?;
+            Ok(())
         }
     }
 }
