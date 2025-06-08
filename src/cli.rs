@@ -1,6 +1,6 @@
-use clap::{Parser, Subcommand};
+use crate::handler::zettel::zettel_new_handler;
 use anyhow::Result;
-use crate::handler::zettel::zettel_handler;
+use clap::{Parser, Subcommand};
 
 #[derive(Parser)]
 pub struct Cli {
@@ -34,7 +34,7 @@ pub fn dispatch(cli: Cli) -> Result<()> {
             r#type,
             tags,
         } => {
-            zettel_handler(&title, &r#type, &tags)?;
+            zettel_new_handler(&title, &r#type, &tags)?;
             Ok(())
         }
     }

@@ -1,15 +1,12 @@
 use anyhow::Result;
 
-use crate::{create_zettel, write_to_markdown, dedup_and_warn, Markdown, FrontMatter, Body};
+use crate::{Body, FrontMatter, Markdown, create_zettel, dedup_and_warn, write_to_markdown};
 
-pub fn zettel_handler(title: &str, r#type: &str, tags: &Option<Vec<String>>) -> Result<()>{
+pub fn zettel_new_handler(title: &str, r#type: &str, tags: &Option<Vec<String>>) -> Result<()> {
     // tag重複確認
     let mut tags_str: Vec<String> = vec![];
     if let Some(tags) = tags {
-        tags_str = tags
-        .into_iter()
-        .map(String::from)
-        .collect();
+        tags_str = tags.into_iter().map(String::from).collect();
     }
     let cleaned_tags = dedup_and_warn(tags_str);
 
@@ -27,7 +24,6 @@ pub fn zettel_handler(title: &str, r#type: &str, tags: &Option<Vec<String>>) -> 
 
     // Markdown構造体にマッピング
     let markdown = Markdown { front_matter, body };
-
 
     // Markdownファイルの生成
     let dir = ".";
