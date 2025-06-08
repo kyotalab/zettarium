@@ -24,6 +24,8 @@ target/
 # Added by cargo
 
 /target
+db
+.env
 
 # IDE/editor settings
 .vscode/
