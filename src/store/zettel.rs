@@ -1,9 +1,8 @@
+use crate::{NoteType, Tag, Zettel};
 use anyhow::{Error, Result};
 use chrono::Local;
-use crate::{NoteType, Zettel, Tag};
 
-
-pub fn create_zettel(title: &str, r#type: &str, tags: &Vec<String>) -> Result<Zettel, Error> {
+pub fn create_zettel(title: &str, r#type: &str, tags: &[String]) -> Result<Zettel, Error> {
     // Zettel構造体にマッピング
     let zettel = Zettel {
         id: generate_zettel_id(),
@@ -18,15 +17,13 @@ pub fn create_zettel(title: &str, r#type: &str, tags: &Vec<String>) -> Result<Ze
 
     //
 
-    // println!("ここでtagsテーブルに追加");
-    // for (i, t) in tags.iter().enumerate() {
-    //     let tag = Tag {
-    //         id: format!("t-{:03}", i + 1),
-    //         tag_name: t.to_string(),
-    //     };
-    //     println!("{tag}");
-    // }
-    // println!("ここまで");
+    if !tags.is_empty() {
+        for tag_name in tags {
+            // 1. tag_name が tags テーブルに存在するか確認（SELECT）
+            // 2. 存在しなければ INSERT
+            // 3. zettel_tags にリレーションを INSERT
+        }
+    }
 
     Ok(zettel)
 }

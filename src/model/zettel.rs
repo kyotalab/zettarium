@@ -62,19 +62,25 @@ impl std::fmt::Display for Zettel {
 // Test
 #[cfg(test)]
 mod tests {
+    use crate::create_zettel;
+    use crate::dedup_and_warn;
+
     use super::*;
-    use chrono::Local;
 
     #[test]
     fn test_zettel_creation_and_display() {
-        let zettel = Zettel {
-            id: "20250604170100".into(),
-            title: "this is a test".into(),
-            r#type: NoteType::Fleeting,
-            created: Local::now().naive_local(),
-            updated: Local::now().naive_local(),
-            archived: false,
-        };
+        let title = "this is a test";
+        let r#type = "fleeting";
+        // let tags = Some(vec!["rust", "test"]);
+        let tags: Option<Vec<String>> = None;
+
+        let mut tags_str: Vec<String> = vec![];
+        if let Some(tags) = tags {
+            tags_str = tags.into_iter().map(String::from).collect();
+        }
+        let cleaned_tags = dedup_and_warn(tags_str);
+
+        let zettel = create_zettel(title, r#type, &cleaned_tags).unwrap();
 
         let output = format!("{zettel}");
         assert!(output.contains("this is a test"));
