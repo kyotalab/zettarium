@@ -1,4 +1,8 @@
-use crate::{NoteType, Zettel, create_tag, create_zettel_tag, get_tag_name, schema::zettels};
+use crate::{
+    NoteType, Zettel, create_tag, create_zettel_tag, get_tag_name,
+    schema::{zettels, zettels::dsl::*},
+    tags, zettel_tags,
+};
 use anyhow::{Error, Result};
 use chrono::{Local, NaiveDateTime};
 use diesel::{SqliteConnection, prelude::*};
@@ -18,7 +22,7 @@ pub struct NewZettel {
 pub fn create_zettel(
     conn: &mut SqliteConnection,
     title_: &str,
-    type_: &str,
+    note_type: &str,
     tags_name: &[String],
 ) -> Result<Zettel, Error> {
     conn.transaction::<Zettel, Error, _>(|conn| {
@@ -27,7 +31,7 @@ pub fn create_zettel(
         let new_zettel = NewZettel {
             id: generate_zettel_id(),
             title: title_.to_string(),
-            type_: type_.parse::<NoteType>()?,
+            type_: note_type.parse::<NoteType>()?,
             created_at: Local::now().naive_local(),
             updated_at: Local::now().naive_local(),
             archived: false,
@@ -54,6 +58,49 @@ pub fn create_zettel(
 
         Ok(zettel)
     })
+}
+
+pub fn list_zettels(
+    conn: &mut SqliteConnection,
+    zettel_id: Option<&str>,
+    note_type: Option<&str>,
+    tags_name: &[String],
+    all: bool,
+    archived_only: bool,
+) -> Result<Vec<Zettel>, Error> {
+    if all {
+        return Ok(zettels.load::<Zettel>(conn)?);
+    }
+
+    let mut query = zettels.into_boxed();
+
+    if let Some(id_filter) = zettel_id {
+        query = query.filter(id.eq(id_filter));
+    }
+
+    if let Some(type_filter) = note_type {
+        query = query.filter(type_.eq(type_filter));
+    }
+
+    if archived_only {
+        query = query.filter(archived.eq(true));
+    } else {
+        query = query.filter(archived.eq(false));
+    }
+
+    if !tags_name.is_empty() {
+        let query_with_tags = zettels
+            .inner_join(zettel_tags::table.on(zettels::id.eq(zettel_tags::zettel_id)))
+            .inner_join(tags::table.on(tags::id.eq(zettel_tags::tag_id)))
+            .filter(tags::tag_name.eq_any(tags_name))
+            .filter(archived.eq(archived_only))
+            .select(Zettel::as_select())
+            .distinct();
+
+        return Ok(query_with_tags.load::<Zettel>(conn)?);
+    }
+
+    Ok(query.load::<Zettel>(conn)?)
 }
 
 fn generate_zettel_id() -> String {
