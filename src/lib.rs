@@ -10,10 +10,10 @@ pub mod validate;
 
 pub use cli::*;
 pub use error::*;
-pub use handler::*;
+pub use handler::zettel::*;
 pub use markdown::*;
-pub use model::*;
-pub use presenter::*;
+pub use model::{Body, FrontMatter, Markdown, NoteType, Tag, Zettel, ZettelTag};
+pub use presenter::zettel::*;
 pub use schema::*;
-pub use store::*;
+pub use store::{db::establish_connection, tag::*, zettel::*, zettel_tag::*};
 pub use validate::*;

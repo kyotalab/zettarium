@@ -2,7 +2,7 @@ use anyhow::{Error, Result};
 
 use crate::{
     Tag, ZettelTag,
-    schema::{tags, zettel_tags, zettel_tags::dsl::*},
+    schema::{tags, zettel_tags},
 };
 use diesel::{SqliteConnection, prelude::*};
 
