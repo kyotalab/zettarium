@@ -1,6 +1,7 @@
 use crate::handler::zettel::zettel_new_handler;
 use anyhow::Result;
 use clap::{Parser, Subcommand};
+use diesel::SqliteConnection;
 
 #[derive(Parser)]
 pub struct Cli {
@@ -16,7 +17,7 @@ pub enum Commands {
         // #[arg(short, long)]
         title: String,
         #[arg(long)]
-        r#type: String,
+        type_: String,
         #[arg(long, value_delimiter = ',')]
         tags: Option<Vec<String>>,
     },
@@ -27,14 +28,10 @@ pub enum Commands {
     // View {},
 }
 
-pub fn dispatch(cli: Cli) -> Result<()> {
+pub fn dispatch(cli: Cli, conn: &mut SqliteConnection) -> Result<()> {
     match cli.command {
-        Commands::New {
-            title,
-            r#type,
-            tags,
-        } => {
-            zettel_new_handler(&title, &r#type, &tags)?;
+        Commands::New { title, type_, tags } => {
+            zettel_new_handler(conn, &title, &type_, &tags)?;
             Ok(())
         }
     }

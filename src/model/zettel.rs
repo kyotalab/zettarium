@@ -1,21 +1,33 @@
 use std::str::FromStr;
 
 use chrono::NaiveDateTime;
+use diesel::{
+    backend::Backend,
+    deserialize::{FromSql, FromSqlRow},
+    expression::*,
+    prelude::*,
+    serialize::{Output, ToSql},
+    sql_types::Text,
+    sqlite::Sqlite,
+};
 use serde::{Deserialize, Serialize};
 
 use crate::ZettariumError;
+use crate::schema::zettels;
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Queryable, Selectable)]
+#[diesel(table_name = zettels)]
 pub struct Zettel {
     pub id: String,
     pub title: String,
-    pub r#type: NoteType,
-    pub created: NaiveDateTime,
-    pub updated: NaiveDateTime,
+    pub type_: NoteType,
+    pub created_at: NaiveDateTime,
+    pub updated_at: NaiveDateTime,
     pub archived: bool,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, AsExpression, FromSqlRow)]
+#[diesel(sql_type = Text)]
 pub enum NoteType {
     Fleeting,
     Permanent,
@@ -39,20 +51,49 @@ impl FromStr for NoteType {
     }
 }
 
+// --- ToSql<Text, Sqlite> 実装 ---
+impl ToSql<Text, Sqlite> for NoteType {
+    fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, Sqlite>) -> diesel::serialize::Result {
+        let value = match self {
+            NoteType::Fleeting => "fleeting",
+            NoteType::Permanent => "permanent",
+            NoteType::Literature => "literature",
+            NoteType::Structure => "structure",
+            NoteType::Index => "index",
+        };
+        <str as ToSql<Text, Sqlite>>::to_sql(value, out)
+    }
+}
+
+// --- FromSql<Text, Sqlite> 実装 ---
+impl FromSql<Text, Sqlite> for NoteType {
+    fn from_sql(bytes: <Sqlite as Backend>::RawValue<'_>) -> diesel::deserialize::Result<Self> {
+        let s = <*const str as FromSql<Text, Sqlite>>::from_sql(bytes)?;
+        match unsafe { &*s } {
+            "fleeting" => Ok(NoteType::Fleeting),
+            "permanent" => Ok(NoteType::Permanent),
+            "literature" => Ok(NoteType::Literature),
+            "structure" => Ok(NoteType::Structure),
+            "index" => Ok(NoteType::Index),
+            other => Err(format!("Unrecognized NoteType variant: {}", other).into()),
+        }
+    }
+}
+
 impl std::fmt::Display for Zettel {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         writeln!(f, "ID: {}", self.id)?;
         writeln!(f, "Title: {}", self.title)?;
-        writeln!(f, "Type: {:?}", self.r#type)?;
+        writeln!(f, "Type: {:?}", self.type_)?;
         writeln!(
             f,
             "Created: {}",
-            self.created.format("%Y-%m-%d %H:%M:%S").to_string()
+            self.created_at.format("%Y-%m-%d %H:%M:%S").to_string()
         )?;
         writeln!(
             f,
             "Updated: {}",
-            self.updated.format("%Y-%m-%d %H:%M:%S").to_string()
+            self.updated_at.format("%Y-%m-%d %H:%M:%S").to_string()
         )?;
         writeln!(f, "Archived: {}", self.archived)?;
         Ok(())
@@ -64,13 +105,15 @@ impl std::fmt::Display for Zettel {
 mod tests {
     use crate::create_zettel;
     use crate::dedup_and_warn;
+    use crate::establish_connection;
 
     use super::*;
 
     #[test]
     fn test_zettel_creation_and_display() {
+        let conn = &mut establish_connection();
         let title = "this is a test";
-        let r#type = "fleeting";
+        let type_ = "fleeting";
         // let tags = Some(vec!["rust", "test"]);
         let tags: Option<Vec<String>> = None;
 
@@ -80,9 +123,9 @@ mod tests {
         }
         let cleaned_tags = dedup_and_warn(tags_str);
 
-        let zettel = create_zettel(title, r#type, &cleaned_tags).unwrap();
+        let zettel = create_zettel(conn, title, type_, &cleaned_tags).unwrap();
 
-        let output = format!("{zettel}");
+        let output = format!("{:?}", zettel);
         assert!(output.contains("this is a test"));
         assert!(output.contains("Fleeting"));
     }

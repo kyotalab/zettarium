@@ -1,8 +1,14 @@
 use anyhow::Result;
+use diesel::SqliteConnection;
 
 use crate::{Body, FrontMatter, Markdown, create_zettel, dedup_and_warn, write_to_markdown};
 
-pub fn zettel_new_handler(title: &str, r#type: &str, tags: &Option<Vec<String>>) -> Result<()> {
+pub fn zettel_new_handler(
+    conn: &mut SqliteConnection,
+    title: &str,
+    type_: &str,
+    tags: &Option<Vec<String>>,
+) -> Result<()> {
     // tag重複確認
     let mut tags_str: Vec<String> = vec![];
     if let Some(tags) = tags {
@@ -11,7 +17,7 @@ pub fn zettel_new_handler(title: &str, r#type: &str, tags: &Option<Vec<String>>)
     let cleaned_tags = dedup_and_warn(tags_str);
 
     // Zettel構造体にマッピングしてSQLiteに保存
-    let zettel = create_zettel(title, r#type, &cleaned_tags)?;
+    let zettel = create_zettel(conn, title, type_, &cleaned_tags)?;
 
     // FrontMatter構造体にマッピング
     let front_matter = FrontMatter {
