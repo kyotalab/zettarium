@@ -1,9 +1,6 @@
 use anyhow::{Error, Result};
 
-use crate::{
-    ZettelTag,
-    schema::{zettel_tags, zettel_tags::dsl::*},
-};
+use crate::{ZettelTag, schema::zettel_tags};
 use diesel::{SqliteConnection, prelude::*};
 
 #[derive(Insertable)]
