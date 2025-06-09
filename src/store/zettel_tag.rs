@@ -1,6 +1,9 @@
 use anyhow::{Error, Result};
 
-use crate::{ZettelTag, schema::zettel_tags};
+use crate::{
+    Tag, ZettelTag,
+    schema::{tags, zettel_tags, zettel_tags::dsl::*},
+};
 use diesel::{SqliteConnection, prelude::*};
 
 #[derive(Insertable)]
@@ -28,4 +31,14 @@ pub fn create_zettel_tag(
         .get_result(conn)?;
 
     Ok(zettel_tag)
+}
+
+pub fn get_tag_by_zettel_id(conn: &mut SqliteConnection, id: &str) -> Result<Vec<Tag>, Error> {
+    let tags = zettel_tags::table
+        .inner_join(tags::table.on(zettel_tags::tag_id.eq(tags::id)))
+        .filter(zettel_tags::zettel_id.eq(id))
+        .select(tags::all_columns)
+        .load::<Tag>(conn)?;
+
+    Ok(tags)
 }

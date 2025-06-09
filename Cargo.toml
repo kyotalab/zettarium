@@ -14,3 +14,4 @@ serde_yaml = "0.9.34"
 thiserror = "2.0.12"
 diesel-derive-enum = { version = "2.1.0", features = ["sqlite"] }
 regex = "1.11.1"
+prettytable = "0.10.0"

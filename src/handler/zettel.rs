@@ -2,7 +2,8 @@ use anyhow::Result;
 use diesel::SqliteConnection;
 
 use crate::{
-    Body, FrontMatter, Markdown, create_zettel, dedup_and_warn, list_zettels, write_to_markdown,
+    Body, FrontMatter, Markdown, create_zettel, dedup_and_warn, list_zettels,
+    print_zettels_as_table, write_to_markdown,
 };
 
 pub fn zettel_new_handler(
@@ -58,11 +59,7 @@ pub fn zettel_list_handler(
     // Zettel一覧の取得
     let zettels = list_zettels(conn, id, type_, &cleaned_tags, all, archived)?;
 
-    println!("len: {:?}", zettels.len());
-
     // Display
-    for zettel in zettels {
-        println!("{}", zettel);
-    }
+    print_zettels_as_table(conn, &zettels)?;
     Ok(())
 }
