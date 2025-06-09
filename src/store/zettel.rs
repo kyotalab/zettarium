@@ -3,7 +3,7 @@ use crate::{
     schema::{zettels, zettels::dsl::*},
     tags, zettel_tags,
 };
-use anyhow::{Error, Result};
+use anyhow::{Error, Result, anyhow};
 use chrono::{Local, NaiveDateTime};
 use diesel::{SqliteConnection, prelude::*};
 use serde::Serialize;
@@ -16,6 +16,12 @@ pub struct NewZettel {
     pub type_: NoteType,
     pub created_at: NaiveDateTime,
     pub updated_at: NaiveDateTime,
+    pub archived: bool,
+}
+
+#[derive(AsChangeset)]
+#[diesel(table_name = zettels)]
+pub struct ArchivedZettel {
     pub archived: bool,
 }
 
@@ -103,6 +109,36 @@ pub fn list_zettels(
     Ok(query.load::<Zettel>(conn)?)
 }
 
+pub fn archive_zettel(conn: &mut SqliteConnection, zettel_id: &str) -> Result<Zettel, Error> {
+    let exist_zettel = ensure_zettel_exists(conn, zettel_id)?;
+
+    if exist_zettel.archived {
+        if exist_zettel.archived {
+            return Err(anyhow!("Note is already archived"));
+        }
+    }
+
+    let archived_zettel = diesel::update(zettels.find(zettel_id))
+        .set(ArchivedZettel { archived: true })
+        .returning(Zettel::as_select())
+        .get_result(conn)?;
+
+    Ok(archived_zettel)
+}
+
 fn generate_zettel_id() -> String {
     Local::now().format("%Y%m%dT%H%M%S").to_string()
+}
+
+fn ensure_zettel_exists(conn: &mut SqliteConnection, zettel_id: &str) -> Result<Zettel, Error> {
+    let zettel = zettels
+        .find(zettel_id)
+        .select(Zettel::as_select())
+        .first(conn)
+        .optional()?;
+
+    match zettel {
+        Some(existing) => Ok(existing),
+        None => Err(diesel::result::Error::NotFound.into()),
+    }
 }

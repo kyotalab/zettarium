@@ -2,7 +2,7 @@ use anyhow::Result;
 use diesel::SqliteConnection;
 
 use crate::{
-    Body, FrontMatter, Markdown, create_zettel, dedup_and_warn, list_zettels,
+    Body, FrontMatter, Markdown, archive_zettel, create_zettel, dedup_and_warn, list_zettels,
     print_zettels_as_table, write_to_markdown,
 };
 
@@ -61,5 +61,12 @@ pub fn zettel_list_handler(
 
     // Display
     print_zettels_as_table(conn, &zettels)?;
+    Ok(())
+}
+
+pub fn zettel_archive_handler(conn: &mut SqliteConnection, id: &str) -> Result<()> {
+    let archived_zettel = archive_zettel(conn, &id)?;
+
+    println!("Archived note: {:?}", archived_zettel.id);
     Ok(())
 }

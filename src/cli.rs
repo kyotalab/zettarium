@@ -1,4 +1,4 @@
-use crate::{handler::zettel::zettel_new_handler, zettel_list_handler};
+use crate::{handler::zettel::zettel_new_handler, zettel_archive_handler, zettel_list_handler};
 use anyhow::Result;
 use clap::{Parser, Subcommand};
 use diesel::SqliteConnection;
@@ -36,7 +36,9 @@ pub enum Commands {
         archived: bool,
     },
     // Edit {},
-    // Archive {},
+    #[command(name = "archive", alias = "arc")]
+    #[command(about = "Alias: arc \nLArchive Zettelkasten note.")]
+    Archive { id: String },
     // Remove {},
     // View {},
 }
@@ -55,6 +57,10 @@ pub fn dispatch(cli: Cli, conn: &mut SqliteConnection) -> Result<()> {
             archived,
         } => {
             zettel_list_handler(conn, id.as_deref(), type_.as_deref(), &tags, all, archived)?;
+            Ok(())
+        }
+        Commands::Archive { id } => {
+            zettel_archive_handler(conn, &id)?;
             Ok(())
         }
     }
