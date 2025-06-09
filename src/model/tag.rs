@@ -1,6 +1,8 @@
+use crate::schema::tags;
+use diesel::prelude::*;
 use serde::Serialize;
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, Queryable, Selectable)]
 pub struct Tag {
     pub id: String,
     pub tag_name: String,

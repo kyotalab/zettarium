@@ -1,6 +1,9 @@
+use crate::schema::zettel_tags;
+use diesel::prelude::*;
 use serde::Serialize;
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, Queryable, Selectable)]
+#[diesel(table_name = zettel_tags)]
 pub struct ZettelTag {
     pub zettel_id: String,
     pub tag_id: String,
