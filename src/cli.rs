@@ -37,10 +37,18 @@ pub enum Commands {
     },
     // Edit {},
     #[command(name = "archive", alias = "arc")]
-    #[command(about = "Alias: arc \nLArchive Zettelkasten note.")]
+    #[command(about = "Alias: arc \nArchive Zettelkasten note.")]
     Archive { id: String },
-    // Remove {},
-    // View {},
+    // #[command(name = "remove", alias = "rm")]
+    // #[command(about = "Alias: rm \nDelete Zettelkasten note.")]
+    // Remove {
+    //     id: String,
+    //     #[arg(short, long, action = clap::ArgAction::SetTrue)]
+    //     force: bool,
+    // },
+    #[command(name = "view", alias = "v")]
+    #[command(about = "Alias: v \nView Zettelkasten note in detail.")]
+    View { id: String },
 }
 
 pub fn dispatch(cli: Cli, conn: &mut SqliteConnection) -> Result<()> {
@@ -62,6 +70,7 @@ pub fn dispatch(cli: Cli, conn: &mut SqliteConnection) -> Result<()> {
         Commands::Archive { id } => {
             zettel_archive_handler(conn, &id)?;
             Ok(())
-        }
+        } // Commands::Remove { id, force } => Ok(()),
+        Commands::View { id } => Ok(()),
     }
 }
