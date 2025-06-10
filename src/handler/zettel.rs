@@ -92,7 +92,7 @@ pub fn zettel_remove_handler(conn: &mut SqliteConnection, id: &str, force: bool)
         let input = input.trim().to_lowercase();
 
         if input != "y" && input != "yes" {
-            println!("❎ Cancelled.");
+            println!("Cancelled.");
             return Ok(());
         }
     }
@@ -100,9 +100,9 @@ pub fn zettel_remove_handler(conn: &mut SqliteConnection, id: &str, force: bool)
     let deleted = remove_zettel(conn, id)?;
 
     if deleted == 0 {
-        println!("⚠️  No note was deleted.");
+        println!("Warning:  No note was deleted.");
     } else {
-        println!("🗑️  Note {} has been removed.", id);
+        println!("Removed: Note {} has been removed.", id);
     }
 
     Ok(())

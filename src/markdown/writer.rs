@@ -1,8 +1,8 @@
 use crate::model::Markdown;
 use anyhow::Result;
-use std::{fs, path::PathBuf};
 use std::fs::File;
 use std::io::{BufWriter, Write};
+use std::{fs, path::PathBuf};
 
 pub fn write_to_markdown(markdown: &Markdown, dir: PathBuf) -> Result<()> {
     fs::create_dir_all(&dir)?;
@@ -14,6 +14,6 @@ pub fn write_to_markdown(markdown: &Markdown, dir: PathBuf) -> Result<()> {
     let mut writer = BufWriter::new(file);
     write!(writer, "{}", markdown)?;
 
-    println!("✅ Markdown saved to {}", path.display());
+    println!("Markdown saved to {}", path.display());
     Ok(())
 }
