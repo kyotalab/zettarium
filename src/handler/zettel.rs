@@ -1,11 +1,14 @@
-use anyhow::Result;
+use anyhow::{Context, Result};
 use diesel::SqliteConnection;
-use std::path::PathBuf;
+use std::{
+    io::{Write, stdin, stdout},
+    path::PathBuf,
+};
 
 use crate::{
     Body, FrontMatter, Markdown, archive_zettel, create_zettel, dedup_and_warn,
     ensure_zettel_exists, list_zettels, presenter::view_markdown_with_style,
-    print_zettels_as_table, write_to_markdown,
+    print_zettels_as_table, remove_zettel, write_to_markdown,
 };
 
 pub fn zettel_new_handler(
@@ -70,6 +73,38 @@ pub fn zettel_archive_handler(conn: &mut SqliteConnection, id: &str) -> Result<(
     let archived_zettel = archive_zettel(conn, &id)?;
 
     println!("Archived note: {:?}", archived_zettel.id);
+    Ok(())
+}
+
+pub fn zettel_remove_handler(conn: &mut SqliteConnection, id: &str, force: bool) -> Result<()> {
+    let exist_zettel =
+        ensure_zettel_exists(conn, id).with_context(|| format!("Note not found: {}", id))?;
+
+    if !force {
+        print!(
+            "Are you sure you want to delete note {} ({})? [y/N]: ",
+            id, exist_zettel.title
+        );
+        stdout().flush()?;
+
+        let mut input = String::new();
+        stdin().read_line(&mut input)?;
+        let input = input.trim().to_lowercase();
+
+        if input != "y" && input != "yes" {
+            println!("❎ Cancelled.");
+            return Ok(());
+        }
+    }
+
+    let deleted = remove_zettel(conn, id)?;
+
+    if deleted == 0 {
+        println!("⚠️  No note was deleted.");
+    } else {
+        println!("🗑️  Note {} has been removed.", id);
+    }
+
     Ok(())
 }
 

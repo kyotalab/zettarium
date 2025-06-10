@@ -126,8 +126,9 @@ pub fn archive_zettel(conn: &mut SqliteConnection, zettel_id: &str) -> Result<Ze
     Ok(archived_zettel)
 }
 
-fn generate_zettel_id() -> String {
-    Local::now().format("%Y%m%dT%H%M%S").to_string()
+pub fn remove_zettel(conn: &mut SqliteConnection, zettel_id: &str) -> Result<usize> {
+    let count = diesel::delete(zettels.find(zettel_id)).execute(conn)?;
+    Ok(count)
 }
 
 pub fn ensure_zettel_exists(conn: &mut SqliteConnection, zettel_id: &str) -> Result<Zettel, Error> {
@@ -141,4 +142,8 @@ pub fn ensure_zettel_exists(conn: &mut SqliteConnection, zettel_id: &str) -> Res
         Some(existing) => Ok(existing),
         None => Err(diesel::result::Error::NotFound.into()),
     }
+}
+
+fn generate_zettel_id() -> String {
+    Local::now().format("%Y%m%dT%H%M%S").to_string()
 }

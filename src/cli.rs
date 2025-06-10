@@ -1,6 +1,6 @@
 use crate::{
     handler::zettel::zettel_new_handler, zettel_archive_handler, zettel_list_handler,
-    zettel_view_handler,
+    zettel_remove_handler, zettel_view_handler,
 };
 use anyhow::Result;
 use clap::{Parser, Subcommand};
@@ -42,13 +42,13 @@ pub enum Commands {
     #[command(name = "archive", alias = "arc")]
     #[command(about = "Alias: arc \nArchive Zettelkasten note.")]
     Archive { id: String },
-    // #[command(name = "remove", alias = "rm")]
-    // #[command(about = "Alias: rm \nDelete Zettelkasten note.")]
-    // Remove {
-    //     id: String,
-    //     #[arg(short, long, action = clap::ArgAction::SetTrue)]
-    //     force: bool,
-    // },
+    #[command(name = "remove", alias = "rm")]
+    #[command(about = "Alias: rm \nDelete Zettelkasten note.")]
+    Remove {
+        id: String,
+        #[arg(short, long, action = clap::ArgAction::SetTrue)]
+        force: bool,
+    },
     #[command(name = "view", alias = "v")]
     #[command(about = "Alias: v \nView Zettelkasten note in detail.")]
     View { id: String },
@@ -73,7 +73,11 @@ pub fn dispatch(cli: Cli, conn: &mut SqliteConnection) -> Result<()> {
         Commands::Archive { id } => {
             zettel_archive_handler(conn, &id)?;
             Ok(())
-        } // Commands::Remove { id, force } => Ok(()),
+        }
+        Commands::Remove { id, force } => {
+            let _result = zettel_remove_handler(conn, &id, force)?;
+            Ok(())
+        }
         Commands::View { id } => {
             zettel_view_handler(conn, &id)?;
             Ok(())
