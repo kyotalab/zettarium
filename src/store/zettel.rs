@@ -188,6 +188,18 @@ pub fn ensure_zettel_exists(conn: &mut SqliteConnection, zettel_id: &str) -> Res
     }
 }
 
+pub fn update_zettel_timestamp_only(
+    conn: &mut SqliteConnection,
+    zettel_id: &str,
+) -> Result<Zettel> {
+    let updated = diesel::update(zettels.find(zettel_id))
+        .set(updated_at.eq(Local::now().naive_local()))
+        .returning(Zettel::as_select())
+        .get_result(conn)?;
+
+    Ok(updated)
+}
+
 fn generate_zettel_id() -> String {
     Local::now().format("%Y%m%dT%H%M%S").to_string()
 }

@@ -4,9 +4,9 @@ use std::io::{Write, stdin, stdout};
 
 use crate::{
     AppConfig, Body, FrontMatter, Markdown, archive_zettel, create_zettel, dedup_and_warn,
-    edit_with_editor, ensure_zettel_exists, get_tag_by_zettel_id, list_zettels, parse_markdown,
-    presenter::view_markdown_with_style, print_zettels_as_table, remove_zettel, update_zettel,
-    write_to_markdown,
+    edit_with_editor, ensure_zettel_exists, get_tag_by_zettel_id, list_zettels,
+    presenter::view_markdown_with_style, print_zettels_as_table, remove_zettel,
+    update_markdown_file, update_zettel, write_to_markdown,
 };
 
 pub fn zettel_new_handler(
@@ -80,63 +80,58 @@ pub fn zettel_edit_handler(
     // モード1: エディタを開いて編集する
     // --------------------------------------
     if title.is_none() && type_.is_none() && tags.is_none() {
-        return edit_with_editor(conn, id, config);
+        let updated = edit_with_editor(conn, id, config)?;
+        let tags = get_tag_by_zettel_id(conn, id)?
+            .into_iter()
+            .map(|t| t.tag_name)
+            .collect::<Vec<_>>();
+
+        update_markdown_file(&updated, &tags, &config.paths.zettel_dir)?;
+        return Ok(());
     }
 
     // --------------------------------------
     // モード2: CLIオプションで部分更新
     // --------------------------------------
-
-    // 既存Zettel取得
     let existing_zettel = ensure_zettel_exists(conn, id)?;
 
-    // タグの統合（既存タグ + CLIタグ）
-    let mut all_tags = get_tag_by_zettel_id(conn, id)?
+    let merged_tags = merge_tags(conn, id, tags.clone())?;
+
+    let final_title = title.unwrap_or(&existing_zettel.title);
+    let final_type = type_
+        .map(|t| t.to_string())
+        .unwrap_or_else(|| format!("{:?}", existing_zettel.type_));
+
+    let updated_zettel = update_zettel(conn, id, final_title, &final_type, &merged_tags)?;
+
+    // Markdown更新処理
+    update_markdown_file(&updated_zettel, &merged_tags, &config.paths.zettel_dir)?;
+
+    Ok(())
+}
+
+fn merge_tags(
+    conn: &mut SqliteConnection,
+    zettel_id: &str,
+    new_tags: Option<Vec<String>>,
+) -> Result<Vec<String>> {
+    let mut all_tags = get_tag_by_zettel_id(conn, zettel_id)?
         .into_iter()
         .map(|t| t.tag_name)
         .collect::<Vec<_>>();
 
-    if let Some(tags) = tags {
-        let new_cleaned = dedup_and_warn(tags.clone());
-
-        let mut tag_set = std::collections::HashSet::new();
-        all_tags.retain(|t| tag_set.insert(t.to_lowercase()));
-        for tag in new_cleaned {
-            if tag_set.insert(tag.to_lowercase()) {
+    if let Some(input_tags) = new_tags {
+        let cleaned = dedup_and_warn(input_tags);
+        let mut seen = std::collections::HashSet::new();
+        all_tags.retain(|t| seen.insert(t.to_lowercase()));
+        for tag in cleaned {
+            if seen.insert(tag.to_lowercase()) {
                 all_tags.push(tag);
             }
         }
     }
 
-    // title/type_ の値は存在しない場合、既存値を使う
-    let new_title = title.unwrap_or(&existing_zettel.title);
-    let new_type = type_
-        .map(|t| t.to_string())
-        .unwrap_or_else(|| format!("{:?}", existing_zettel.type_));
-
-    // DB更新
-    let updated_zettel = update_zettel(conn, id, new_title, &new_type, &all_tags)?;
-
-    // MarkdownのBodyをファイルから取得
-    let dir = &config.paths.zettel_dir;
-    let (_, body_raw) = parse_markdown(&updated_zettel, dir.clone().into())?;
-    let cleaned_body = body_raw
-        .trim_start_matches('\n')
-        .trim_start_matches("\r\n")
-        .to_string();
-
-    // Markdown再生成
-    let markdown = Markdown {
-        front_matter: FrontMatter {
-            zettel: updated_zettel,
-            tags: all_tags,
-        },
-        body: Body(cleaned_body),
-    };
-
-    write_to_markdown(&markdown, dir.into())?;
-
-    Ok(())
+    Ok(all_tags)
 }
 
 pub fn zettel_archive_handler(conn: &mut SqliteConnection, id: &str) -> Result<()> {

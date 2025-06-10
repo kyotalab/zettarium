@@ -1,5 +1,8 @@
 use crate::model::Markdown;
-use crate::{AppConfig, ensure_zettel_exists};
+use crate::{
+    AppConfig, Body, FrontMatter, Zettel, ensure_zettel_exists, parse_markdown,
+    update_zettel_timestamp_only,
+};
 use anyhow::Result;
 use diesel::SqliteConnection;
 use std::fs::File;
@@ -20,7 +23,11 @@ pub fn write_to_markdown(markdown: &Markdown, dir: PathBuf) -> Result<()> {
     Ok(())
 }
 
-pub fn edit_with_editor(conn: &mut SqliteConnection, id: &str, config: &AppConfig) -> Result<()> {
+pub fn edit_with_editor(
+    conn: &mut SqliteConnection,
+    id: &str,
+    config: &AppConfig,
+) -> Result<Zettel> {
     let zettel = ensure_zettel_exists(conn, id)?;
     let path = PathBuf::from(format!("{}/{}.md", &config.paths.zettel_dir, zettel.id));
 
@@ -28,11 +35,30 @@ pub fn edit_with_editor(conn: &mut SqliteConnection, id: &str, config: &AppConfi
     let status = std::process::Command::new(editor).arg(&path).status()?;
 
     if !status.success() {
-        println!("Edit was canceled.");
-        return Ok(());
+        println!("Edit was cancelled.");
+        anyhow::bail!("Editor exited with non-zero status");
     }
 
-    // File update completed (you can sync front matter & DB here if needed)
-    println!("Edit completed: {}", path.display());
-    Ok(())
+    // `updated_at` だけ更新する
+    let zettel = update_zettel_timestamp_only(conn, id)?; // ← 新たに関数を用意
+
+    Ok(zettel)
+}
+
+pub fn update_markdown_file(zettel: &Zettel, tags: &[String], dir: &str) -> Result<()> {
+    let (_, body_raw) = parse_markdown(zettel, dir.into())?;
+    let cleaned_body = body_raw
+        .trim_start_matches('\n')
+        .trim_start_matches("\r\n")
+        .to_string();
+
+    let markdown = Markdown {
+        front_matter: FrontMatter {
+            zettel: zettel.clone(),
+            tags: tags.to_vec(),
+        },
+        body: Body(cleaned_body),
+    };
+
+    write_to_markdown(&markdown, dir.into())
 }
