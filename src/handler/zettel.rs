@@ -6,7 +6,7 @@ use std::{
 };
 
 use crate::{
-    Body, FrontMatter, Markdown, archive_zettel, create_zettel, dedup_and_warn,
+    Body, FrontMatter, Markdown, archive_zettel, create_zettel, dedup_and_warn, edit_with_editor,
     ensure_zettel_exists, get_tag_by_zettel_id, list_zettels, parse_markdown,
     presenter::view_markdown_with_style, print_zettels_as_table, remove_zettel, update_zettel,
     write_to_markdown,
@@ -73,22 +73,33 @@ pub fn zettel_list_handler(
 pub fn zettel_edit_handler(
     conn: &mut SqliteConnection,
     id: &str,
-    title: &str,
-    type_: &str,
+    title: Option<&str>,
+    type_: Option<&str>,
     tags: &Option<Vec<String>>,
 ) -> Result<()> {
-    // 既存タグの取得
+    // --------------------------------------
+    // モード1: エディタを開いて編集する
+    // --------------------------------------
+    if title.is_none() && type_.is_none() && tags.is_none() {
+        return edit_with_editor(conn, id);
+    }
+
+    // --------------------------------------
+    // モード2: CLIオプションで部分更新
+    // --------------------------------------
+
+    // 既存Zettel取得
+    let existing_zettel = ensure_zettel_exists(conn, id)?;
+
+    // タグの統合（既存タグ + CLIタグ）
     let mut all_tags = get_tag_by_zettel_id(conn, id)?
         .into_iter()
         .map(|t| t.tag_name)
         .collect::<Vec<_>>();
 
-    // 引数で新規タグが指定されている場合
     if let Some(tags) = tags {
-        let new_tags: Vec<String> = tags.iter().map(String::from).collect();
-        let new_cleaned = dedup_and_warn(new_tags);
+        let new_cleaned = dedup_and_warn(tags.clone());
 
-        // 統合 & 重複除去（大文字小文字の区別をなくす）
         let mut tag_set = std::collections::HashSet::new();
         all_tags.retain(|t| tag_set.insert(t.to_lowercase()));
         for tag in new_cleaned {
@@ -98,35 +109,33 @@ pub fn zettel_edit_handler(
         }
     }
 
-    // 更新
-    let updated_zettel = update_zettel(conn, id, title, type_, &all_tags)?;
+    // title/type_ の値は存在しない場合、既存値を使う
+    let new_title = title.unwrap_or(&existing_zettel.title);
+    let new_type = type_
+        .map(|t| t.to_string())
+        .unwrap_or_else(|| format!("{:?}", existing_zettel.type_));
 
-    // FrontMatterにマージ後のタグを設定
-    let front_matter = FrontMatter {
-        zettel: updated_zettel.clone(),
-        tags: all_tags,
-    };
+    // DB更新
+    let updated_zettel = update_zettel(conn, id, new_title, &new_type, &all_tags)?;
 
-    // MarkdownのBodyをファイルから読み込む
-    // noteディレクトリのパスを取得 & ファイルパスを生成
+    // MarkdownのBodyをファイルから取得
     let dir: PathBuf = ".".into();
-
-    // ファイルパスを指定して、ファイルOpen
-    let contents = parse_markdown(&updated_zettel, dir.clone())?;
-    let body = contents
-        .1
+    let (_, body_raw) = parse_markdown(&updated_zettel, dir.clone())?;
+    let cleaned_body = body_raw
         .trim_start_matches('\n')
         .trim_start_matches("\r\n")
         .to_string();
 
-    // Markdown構造体にマッピング
+    // Markdown再生成
     let markdown = Markdown {
-        front_matter,
-        body: Body(body),
+        front_matter: FrontMatter {
+            zettel: updated_zettel,
+            tags: all_tags,
+        },
+        body: Body(cleaned_body),
     };
 
-    // Markdownファイルの更新
-    write_to_markdown(&markdown, dir.clone())?;
+    write_to_markdown(&markdown, dir)?;
 
     Ok(())
 }

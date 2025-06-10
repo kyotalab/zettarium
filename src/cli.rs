@@ -43,9 +43,9 @@ pub enum Commands {
     Edit {
         id: String,
         #[arg(short, long)]
-        title: String,
+        title: Option<String>,
         #[arg(long)]
-        type_: String,
+        type_: Option<String>,
         #[arg(long, value_delimiter = ',')]
         tags: Option<Vec<String>>,
     },
@@ -86,7 +86,7 @@ pub fn dispatch(cli: Cli, conn: &mut SqliteConnection) -> Result<()> {
             type_,
             tags,
         } => {
-            zettel_edit_handler(conn, &id, &title, &type_, &tags)?;
+            zettel_edit_handler(conn, &id, title.as_deref(), type_.as_deref(), &tags)?;
             Ok(())
         }
         Commands::Archive { id } => {
