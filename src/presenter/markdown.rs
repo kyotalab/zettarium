@@ -1,9 +1,12 @@
 use crate::Zettel;
 use anyhow::{Context, Result};
-use std::{fs, path::Path};
+use std::{
+    fs,
+    path::{Path, PathBuf},
+};
 use termimad::{CompoundStyle, MadSkin, StyledChar, rgb};
 
-pub fn view_markdown_with_style(zettel: &Zettel, dir: &Path) -> Result<()> {
+pub fn view_markdown_with_style(zettel: &Zettel, dir: PathBuf) -> Result<()> {
     // ファイルパスを指定して、ファイルOpen
     let filename = format!("{}.md", zettel.id);
     let path = dir.join(filename);

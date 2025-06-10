@@ -1,4 +1,5 @@
 pub mod cli;
+pub mod config;
 pub mod error;
 pub mod handler;
 pub mod markdown;
@@ -9,6 +10,7 @@ pub mod store;
 pub mod validate;
 
 pub use cli::*;
+pub use config::*;
 pub use error::*;
 pub use handler::zettel::*;
 pub use markdown::*;

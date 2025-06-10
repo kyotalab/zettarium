@@ -6,8 +6,8 @@ use std::{
 };
 
 use crate::{
-    Body, FrontMatter, Markdown, archive_zettel, create_zettel, dedup_and_warn, edit_with_editor,
-    ensure_zettel_exists, get_tag_by_zettel_id, list_zettels, parse_markdown,
+    AppConfig, Body, FrontMatter, Markdown, archive_zettel, create_zettel, dedup_and_warn,
+    edit_with_editor, ensure_zettel_exists, get_tag_by_zettel_id, list_zettels, parse_markdown,
     presenter::view_markdown_with_style, print_zettels_as_table, remove_zettel, update_zettel,
     write_to_markdown,
 };
@@ -17,6 +17,7 @@ pub fn zettel_new_handler(
     title: &str,
     type_: &str,
     tags: &Option<Vec<String>>,
+    config: &AppConfig,
 ) -> Result<()> {
     // tag重複確認
     let mut tags_str: Vec<String> = vec![];
@@ -41,7 +42,7 @@ pub fn zettel_new_handler(
     let markdown = Markdown { front_matter, body };
 
     // Markdownファイルの生成
-    let dir = ".";
+    let dir = &config.paths.zettel_dir;
     write_to_markdown(&markdown, dir.into())?;
 
     Ok(())
@@ -76,6 +77,7 @@ pub fn zettel_edit_handler(
     title: Option<&str>,
     type_: Option<&str>,
     tags: &Option<Vec<String>>,
+    config: &AppConfig,
 ) -> Result<()> {
     // --------------------------------------
     // モード1: エディタを開いて編集する
@@ -119,8 +121,8 @@ pub fn zettel_edit_handler(
     let updated_zettel = update_zettel(conn, id, new_title, &new_type, &all_tags)?;
 
     // MarkdownのBodyをファイルから取得
-    let dir: PathBuf = ".".into();
-    let (_, body_raw) = parse_markdown(&updated_zettel, dir.clone())?;
+    let dir = &config.paths.zettel_dir;
+    let (_, body_raw) = parse_markdown(&updated_zettel, dir.clone().into())?;
     let cleaned_body = body_raw
         .trim_start_matches('\n')
         .trim_start_matches("\r\n")
@@ -135,7 +137,7 @@ pub fn zettel_edit_handler(
         body: Body(cleaned_body),
     };
 
-    write_to_markdown(&markdown, dir)?;
+    write_to_markdown(&markdown, dir.into())?;
 
     Ok(())
 }
@@ -179,14 +181,18 @@ pub fn zettel_remove_handler(conn: &mut SqliteConnection, id: &str, force: bool)
     Ok(())
 }
 
-pub fn zettel_view_handler(conn: &mut SqliteConnection, id: &str) -> Result<()> {
+pub fn zettel_view_handler(
+    conn: &mut SqliteConnection,
+    id: &str,
+    config: &AppConfig,
+) -> Result<()> {
     // ファイルの存在確認
     let zettel = ensure_zettel_exists(conn, id)?;
     // noteディレクトリのパスを取得 & ファイルパスを生成
-    let dir: PathBuf = ".".into();
+    let dir = &config.paths.zettel_dir;
 
     // Display
-    view_markdown_with_style(&zettel, &dir)?;
+    view_markdown_with_style(&zettel, dir.into())?;
 
     Ok(())
 }

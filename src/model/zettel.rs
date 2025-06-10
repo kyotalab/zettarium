@@ -103,6 +103,7 @@ impl std::fmt::Display for Zettel {
 // Test
 #[cfg(test)]
 mod tests {
+    use crate::config::load_config;
     use crate::create_zettel;
     use crate::dedup_and_warn;
     use crate::establish_connection;
@@ -111,7 +112,11 @@ mod tests {
 
     #[test]
     fn test_zettel_creation_and_display() {
-        let conn = &mut establish_connection();
+        let config = load_config().unwrap_or_else(|e| {
+            eprintln!("Failed to load config: {}", e);
+            std::process::exit(1);
+        });
+        let conn = &mut establish_connection(&config);
         let title = "this is a test";
         let type_ = "fleeting";
         // let tags = Some(vec!["rust", "test"]);

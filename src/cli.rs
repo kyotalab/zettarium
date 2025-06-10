@@ -1,5 +1,5 @@
 use crate::{
-    handler::zettel::zettel_new_handler, zettel_archive_handler, zettel_edit_handler,
+    AppConfig, handler::zettel::zettel_new_handler, zettel_archive_handler, zettel_edit_handler,
     zettel_list_handler, zettel_remove_handler, zettel_view_handler,
 };
 use anyhow::Result;
@@ -64,10 +64,10 @@ pub enum Commands {
     View { id: String },
 }
 
-pub fn dispatch(cli: Cli, conn: &mut SqliteConnection) -> Result<()> {
+pub fn dispatch(cli: Cli, conn: &mut SqliteConnection, config: &AppConfig) -> Result<()> {
     match cli.command {
         Commands::New { title, type_, tags } => {
-            zettel_new_handler(conn, &title, &type_, &tags)?;
+            zettel_new_handler(conn, &title, &type_, &tags, config)?;
             Ok(())
         }
         Commands::List {
@@ -86,7 +86,7 @@ pub fn dispatch(cli: Cli, conn: &mut SqliteConnection) -> Result<()> {
             type_,
             tags,
         } => {
-            zettel_edit_handler(conn, &id, title.as_deref(), type_.as_deref(), &tags)?;
+            zettel_edit_handler(conn, &id, title.as_deref(), type_.as_deref(), &tags, config)?;
             Ok(())
         }
         Commands::Archive { id } => {
@@ -98,7 +98,7 @@ pub fn dispatch(cli: Cli, conn: &mut SqliteConnection) -> Result<()> {
             Ok(())
         }
         Commands::View { id } => {
-            zettel_view_handler(conn, &id)?;
+            zettel_view_handler(conn, &id, config)?;
             Ok(())
         }
     }
