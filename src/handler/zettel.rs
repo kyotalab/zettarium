@@ -1,6 +1,6 @@
 use anyhow::Result;
 use diesel::SqliteConnection;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 use crate::{
     Body, FrontMatter, Markdown, archive_zettel, create_zettel, dedup_and_warn,
@@ -80,7 +80,7 @@ pub fn zettel_view_handler(conn: &mut SqliteConnection, id: &str) -> Result<()> 
     let dir: PathBuf = ".".into();
 
     // Display
-    view_markdown_with_style(&zettel, dir)?;
+    view_markdown_with_style(&zettel, &dir)?;
 
     Ok(())
 }

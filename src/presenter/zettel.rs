@@ -1,7 +1,7 @@
-use anyhow::Result;
+use anyhow::{Context, Result};
 use diesel::SqliteConnection;
 use prettytable::{Table, row};
-use std::{fs, path::PathBuf};
+use std::{fs, path::Path};
 use termimad::{CompoundStyle, MadSkin, StyledChar, rgb};
 
 use crate::{Zettel, get_tag_by_zettel_id};
@@ -43,13 +43,14 @@ pub fn print_zettels_as_table(conn: &mut SqliteConnection, zettels: &Vec<Zettel>
     Ok(())
 }
 
-pub fn view_markdown_with_style(zettel: &Zettel, dir: PathBuf) -> Result<()> {
+pub fn view_markdown_with_style(zettel: &Zettel, dir: &Path) -> Result<()> {
     // ファイルパスを指定して、ファイルOpen
     let filename = format!("{}.md", zettel.id);
     let path = dir.join(filename);
 
     // Markdownファイルをレンダリングする処理
-    let content = fs::read_to_string(path)?;
+    let content = fs::read_to_string(&path)
+        .with_context(|| format!("Failed to read markdown file at {}", path.display()))?;
     let skin = create_custom_skin();
     skin.print_text(&content);
 
