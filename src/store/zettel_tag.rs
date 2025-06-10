@@ -2,7 +2,7 @@ use anyhow::{Error, Result};
 
 use crate::{
     Tag, ZettelTag,
-    schema::{tags, zettel_tags},
+    schema::{tags, zettel_tags, zettel_tags::dsl::*},
 };
 use diesel::{SqliteConnection, prelude::*};
 
@@ -41,4 +41,18 @@ pub fn get_tag_by_zettel_id(conn: &mut SqliteConnection, id: &str) -> Result<Vec
         .load::<Tag>(conn)?;
 
     Ok(tags)
+}
+
+pub fn exists_zettel_tag(
+    conn: &mut SqliteConnection,
+    zettel_id_: &str,
+    tag_id_: &str,
+) -> Result<bool, Error> {
+    let count = zettel_tags
+        .filter(zettel_id.eq(zettel_id_))
+        .filter(tag_id.eq(tag_id_))
+        .count()
+        .get_result::<i64>(conn)?;
+
+    Ok(count > 0)
 }

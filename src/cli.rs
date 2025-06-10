@@ -1,6 +1,6 @@
 use crate::{
-    handler::zettel::zettel_new_handler, zettel_archive_handler, zettel_list_handler,
-    zettel_remove_handler, zettel_view_handler,
+    handler::zettel::zettel_new_handler, zettel_archive_handler, zettel_edit_handler,
+    zettel_list_handler, zettel_remove_handler, zettel_view_handler,
 };
 use anyhow::Result;
 use clap::{Parser, Subcommand};
@@ -38,7 +38,17 @@ pub enum Commands {
         #[arg(long, action = clap::ArgAction::SetTrue)]
         archived: bool,
     },
-    // Edit {},
+    #[command(name = "edit", alias = "e")]
+    #[command(about = "Alias: e \nOpen editor and Edit Zettelkasten note.")]
+    Edit {
+        id: String,
+        #[arg(short, long)]
+        title: String,
+        #[arg(long)]
+        type_: String,
+        #[arg(long, value_delimiter = ',')]
+        tags: Option<Vec<String>>,
+    },
     #[command(name = "archive", alias = "arc")]
     #[command(about = "Alias: arc \nArchive Zettelkasten note.")]
     Archive { id: String },
@@ -68,6 +78,15 @@ pub fn dispatch(cli: Cli, conn: &mut SqliteConnection) -> Result<()> {
             archived,
         } => {
             zettel_list_handler(conn, id.as_deref(), type_.as_deref(), &tags, all, archived)?;
+            Ok(())
+        }
+        Commands::Edit {
+            id,
+            title,
+            type_,
+            tags,
+        } => {
+            zettel_edit_handler(conn, &id, &title, &type_, &tags)?;
             Ok(())
         }
         Commands::Archive { id } => {

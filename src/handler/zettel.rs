@@ -7,8 +7,9 @@ use std::{
 
 use crate::{
     Body, FrontMatter, Markdown, archive_zettel, create_zettel, dedup_and_warn,
-    ensure_zettel_exists, list_zettels, presenter::view_markdown_with_style,
-    print_zettels_as_table, remove_zettel, write_to_markdown,
+    ensure_zettel_exists, get_tag_by_zettel_id, list_zettels, parse_markdown,
+    presenter::view_markdown_with_style, print_zettels_as_table, remove_zettel, update_zettel,
+    write_to_markdown,
 };
 
 pub fn zettel_new_handler(
@@ -66,6 +67,67 @@ pub fn zettel_list_handler(
 
     // Display
     print_zettels_as_table(conn, &zettels)?;
+    Ok(())
+}
+
+pub fn zettel_edit_handler(
+    conn: &mut SqliteConnection,
+    id: &str,
+    title: &str,
+    type_: &str,
+    tags: &Option<Vec<String>>,
+) -> Result<()> {
+    // 既存タグの取得
+    let mut all_tags = get_tag_by_zettel_id(conn, id)?
+        .into_iter()
+        .map(|t| t.tag_name)
+        .collect::<Vec<_>>();
+
+    // 引数で新規タグが指定されている場合
+    if let Some(tags) = tags {
+        let new_tags: Vec<String> = tags.iter().map(String::from).collect();
+        let new_cleaned = dedup_and_warn(new_tags);
+
+        // 統合 & 重複除去（大文字小文字の区別をなくす）
+        let mut tag_set = std::collections::HashSet::new();
+        all_tags.retain(|t| tag_set.insert(t.to_lowercase()));
+        for tag in new_cleaned {
+            if tag_set.insert(tag.to_lowercase()) {
+                all_tags.push(tag);
+            }
+        }
+    }
+
+    // 更新
+    let updated_zettel = update_zettel(conn, id, title, type_, &all_tags)?;
+
+    // FrontMatterにマージ後のタグを設定
+    let front_matter = FrontMatter {
+        zettel: updated_zettel.clone(),
+        tags: all_tags,
+    };
+
+    // MarkdownのBodyをファイルから読み込む
+    // noteディレクトリのパスを取得 & ファイルパスを生成
+    let dir: PathBuf = ".".into();
+
+    // ファイルパスを指定して、ファイルOpen
+    let contents = parse_markdown(&updated_zettel, dir.clone())?;
+    let body = contents
+        .1
+        .trim_start_matches('\n')
+        .trim_start_matches("\r\n")
+        .to_string();
+
+    // Markdown構造体にマッピング
+    let markdown = Markdown {
+        front_matter,
+        body: Body(body),
+    };
+
+    // Markdownファイルの更新
+    write_to_markdown(&markdown, dir.clone())?;
+
     Ok(())
 }
 

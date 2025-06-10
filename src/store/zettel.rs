@@ -1,6 +1,6 @@
 use crate::{
-    NoteType, Zettel, create_tag, create_zettel_tag, get_tag_name,
-    schema::{zettels, zettels::dsl::*},
+    NoteType, Zettel, create_tag, create_zettel_tag, exists_zettel_tag, get_tag_name,
+    schema::zettels::{self, dsl::*},
     tags, zettel_tags,
 };
 use anyhow::{Error, Result, anyhow};
@@ -17,6 +17,14 @@ pub struct NewZettel {
     pub created_at: NaiveDateTime,
     pub updated_at: NaiveDateTime,
     pub archived: bool,
+}
+
+#[derive(AsChangeset)]
+#[diesel(table_name = zettels)]
+pub struct UpdatedZettel {
+    pub title: String,
+    pub type_: NoteType,
+    pub updated_at: NaiveDateTime,
 }
 
 #[derive(AsChangeset)]
@@ -107,6 +115,42 @@ pub fn list_zettels(
     }
 
     Ok(query.load::<Zettel>(conn)?)
+}
+
+pub fn update_zettel(
+    conn: &mut SqliteConnection,
+    zettel_id: &str,
+    title_: &str,
+    note_type: &str,
+    tags_name: &[String],
+) -> Result<Zettel, Error> {
+    let inserted_zettel = UpdatedZettel {
+        title: title_.to_string(),
+        type_: note_type.parse::<NoteType>()?,
+        updated_at: Local::now().naive_local(),
+    };
+
+    let updated_zettel = diesel::update(zettels.find(zettel_id))
+        .set(inserted_zettel)
+        .returning(Zettel::as_select())
+        .get_result(conn)?;
+
+    if !tags_name.is_empty() {
+        for name in tags_name {
+            // 1. tag_name が tags テーブルに存在するか確認（SELECT）
+            let tag = match get_tag_name(conn, name) {
+                Ok(Some(existing)) => existing,
+                Ok(None) => create_tag(conn, name)?,
+                Err(e) => return Err(e),
+            };
+
+            if !exists_zettel_tag(conn, &updated_zettel.id, &tag.id)? {
+                create_zettel_tag(conn, &updated_zettel.id, &tag.id)?;
+            }
+        }
+    }
+
+    Ok(updated_zettel)
 }
 
 pub fn archive_zettel(conn: &mut SqliteConnection, zettel_id: &str) -> Result<Zettel, Error> {
