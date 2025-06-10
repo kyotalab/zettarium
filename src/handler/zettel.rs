@@ -80,7 +80,7 @@ pub fn zettel_edit_handler(
     // モード1: エディタを開いて編集する
     // --------------------------------------
     if title.is_none() && type_.is_none() && tags.is_none() {
-        return edit_with_editor(conn, id);
+        return edit_with_editor(conn, id, config);
     }
 
     // --------------------------------------

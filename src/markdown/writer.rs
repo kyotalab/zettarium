@@ -1,5 +1,5 @@
-use crate::ensure_zettel_exists;
 use crate::model::Markdown;
+use crate::{AppConfig, ensure_zettel_exists};
 use anyhow::Result;
 use diesel::SqliteConnection;
 use std::fs::File;
@@ -20,11 +20,11 @@ pub fn write_to_markdown(markdown: &Markdown, dir: PathBuf) -> Result<()> {
     Ok(())
 }
 
-pub fn edit_with_editor(conn: &mut SqliteConnection, id: &str) -> Result<()> {
+pub fn edit_with_editor(conn: &mut SqliteConnection, id: &str, config: &AppConfig) -> Result<()> {
     let zettel = ensure_zettel_exists(conn, id)?;
-    let path = PathBuf::from(format!("./{}.md", zettel.id));
+    let path = PathBuf::from(format!("{}/{}.md", &config.paths.zettel_dir, zettel.id));
 
-    let editor = std::env::var("EDITOR").unwrap_or_else(|_| "vim".into());
+    let editor = &config.editor;
     let status = std::process::Command::new(editor).arg(&path).status()?;
 
     if !status.success() {

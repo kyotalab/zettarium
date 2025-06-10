@@ -4,6 +4,7 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Deserialize)]
 pub struct AppConfig {
+    pub editor: String,
     pub paths: PathsConfig,
 }
 
