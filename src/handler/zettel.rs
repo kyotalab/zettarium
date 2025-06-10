@@ -1,6 +1,10 @@
 use anyhow::{Context, Result};
 use diesel::SqliteConnection;
-use std::io::{Write, stdin, stdout};
+use std::{
+    fs,
+    io::{Write, stdin, stdout},
+    path::PathBuf,
+};
 
 use crate::{
     AppConfig, Body, FrontMatter, Markdown, archive_zettel, create_zettel, dedup_and_warn,
@@ -140,8 +144,32 @@ fn merge_tags(
     Ok(all_tags)
 }
 
-pub fn zettel_archive_handler(conn: &mut SqliteConnection, id: &str) -> Result<()> {
+pub fn zettel_archive_handler(
+    conn: &mut SqliteConnection,
+    id: &str,
+    config: &AppConfig,
+) -> Result<()> {
     let archived_zettel = archive_zettel(conn, &id)?;
+
+    if archived_zettel.archived {
+        println!("Note {} is already archived.", archived_zettel.id);
+        return Ok(());
+    }
+
+    fs::create_dir_all(&config.paths.archive_dir)?; // 必要なら作成
+    let path_from = PathBuf::from(format!(
+        "{}/{}.md",
+        &config.paths.zettel_dir, archived_zettel.id
+    ));
+    let path_to = PathBuf::from(format!(
+        "{}/{}.md",
+        &config.paths.archive_dir, archived_zettel.id
+    ));
+
+    if !path_from.exists() {
+        anyhow::bail!("Zettel file does not exist: {}", path_from.display());
+    }
+    fs::rename(&path_from, &path_to)?; // 失敗時は io::Error を伝搬
 
     println!("Archived note: {:?}", archived_zettel.id);
     Ok(())

@@ -90,7 +90,7 @@ pub fn dispatch(cli: Cli, conn: &mut SqliteConnection, config: &AppConfig) -> Re
             Ok(())
         }
         Commands::Archive { id } => {
-            zettel_archive_handler(conn, &id)?;
+            zettel_archive_handler(conn, &id, config)?;
             Ok(())
         }
         Commands::Remove { id, force } => {
