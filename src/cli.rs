@@ -94,7 +94,7 @@ pub fn dispatch(cli: Cli, conn: &mut SqliteConnection, config: &AppConfig) -> Re
             Ok(())
         }
         Commands::Remove { id, force } => {
-            let _result = zettel_remove_handler(conn, &id, force)?;
+            let _result = zettel_remove_handler(conn, &id, force, config)?;
             Ok(())
         }
         Commands::View { id } => {

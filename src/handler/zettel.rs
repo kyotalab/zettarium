@@ -175,7 +175,12 @@ pub fn zettel_archive_handler(
     Ok(())
 }
 
-pub fn zettel_remove_handler(conn: &mut SqliteConnection, id: &str, force: bool) -> Result<()> {
+pub fn zettel_remove_handler(
+    conn: &mut SqliteConnection,
+    id: &str,
+    force: bool,
+    config: &AppConfig,
+) -> Result<()> {
     let exist_zettel =
         ensure_zettel_exists(conn, id).with_context(|| format!("Note not found: {}", id))?;
 
@@ -201,6 +206,17 @@ pub fn zettel_remove_handler(conn: &mut SqliteConnection, id: &str, force: bool)
     if deleted == 0 {
         println!("Warning:  No note was deleted.");
     } else {
+        let locations = vec![
+            PathBuf::from(format!("{}/{}.md", config.paths.zettel_dir, id)),
+            PathBuf::from(format!("{}/{}.md", config.paths.archive_dir, id)),
+        ];
+
+        for path in locations {
+            if path.exists() {
+                fs::remove_file(&path)
+                    .with_context(|| format!("Failed to delete file: {}", path.display()))?;
+            }
+        }
         println!("Removed: Note {} has been removed.", id);
     }
 
