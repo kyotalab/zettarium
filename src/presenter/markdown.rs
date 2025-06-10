@@ -1,9 +1,6 @@
 use crate::Zettel;
 use anyhow::{Context, Result};
-use std::{
-    fs,
-    path::{Path, PathBuf},
-};
+use std::{fs, path::PathBuf};
 use termimad::{CompoundStyle, MadSkin, StyledChar, rgb};
 
 pub fn view_markdown_with_style(zettel: &Zettel, dir: PathBuf) -> Result<()> {

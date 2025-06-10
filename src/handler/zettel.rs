@@ -1,9 +1,6 @@
 use anyhow::{Context, Result};
 use diesel::SqliteConnection;
-use std::{
-    io::{Write, stdin, stdout},
-    path::PathBuf,
-};
+use std::io::{Write, stdin, stdout};
 
 use crate::{
     AppConfig, Body, FrontMatter, Markdown, archive_zettel, create_zettel, dedup_and_warn,
