@@ -28,8 +28,8 @@ pub fn zettel_new_handler(
 
     // FrontMatter構造体にマッピング
     let front_matter = FrontMatter {
-        zettel,
-        tags: cleaned_tags,
+        zettel: zettel.clone(),
+        tags: cleaned_tags.clone(),
     };
 
     // MarkdownのBody生成
@@ -41,6 +41,12 @@ pub fn zettel_new_handler(
     // Markdownファイルの生成
     let dir = &config.paths.zettel_dir;
     write_to_markdown(&markdown, dir.into())?;
+
+    // エディタを開いて編集
+    let edited_zettel = edit_with_editor(conn, &zettel.id, config)?;
+
+    // 編集後のタグは変更なしなので再利用
+    update_markdown_file(&edited_zettel, &cleaned_tags, dir)?;
 
     Ok(())
 }
