@@ -1,9 +1,11 @@
 use anyhow::Result;
 use diesel::SqliteConnection;
+use std::path::PathBuf;
 
 use crate::{
-    Body, FrontMatter, Markdown, archive_zettel, create_zettel, dedup_and_warn, list_zettels,
-    print_zettels_as_table, write_to_markdown,
+    Body, FrontMatter, Markdown, archive_zettel, create_zettel, dedup_and_warn,
+    ensure_zettel_exists, list_zettels, print_zettels_as_table, view_markdown_with_style,
+    write_to_markdown,
 };
 
 pub fn zettel_new_handler(
@@ -68,5 +70,17 @@ pub fn zettel_archive_handler(conn: &mut SqliteConnection, id: &str) -> Result<(
     let archived_zettel = archive_zettel(conn, &id)?;
 
     println!("Archived note: {:?}", archived_zettel.id);
+    Ok(())
+}
+
+pub fn zettel_view_handler(conn: &mut SqliteConnection, id: &str) -> Result<()> {
+    // ファイルの存在確認
+    let zettel = ensure_zettel_exists(conn, id)?;
+    // noteディレクトリのパスを取得 & ファイルパスを生成
+    let dir: PathBuf = ".".into();
+
+    // Display
+    view_markdown_with_style(&zettel, dir)?;
+
     Ok(())
 }

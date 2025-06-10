@@ -1,4 +1,7 @@
-use crate::{handler::zettel::zettel_new_handler, zettel_archive_handler, zettel_list_handler};
+use crate::{
+    handler::zettel::zettel_new_handler, zettel_archive_handler, zettel_list_handler,
+    zettel_view_handler,
+};
 use anyhow::Result;
 use clap::{Parser, Subcommand};
 use diesel::SqliteConnection;
@@ -71,6 +74,9 @@ pub fn dispatch(cli: Cli, conn: &mut SqliteConnection) -> Result<()> {
             zettel_archive_handler(conn, &id)?;
             Ok(())
         } // Commands::Remove { id, force } => Ok(()),
-        Commands::View { id } => Ok(()),
+        Commands::View { id } => {
+            zettel_view_handler(conn, &id)?;
+            Ok(())
+        }
     }
 }

@@ -130,7 +130,7 @@ fn generate_zettel_id() -> String {
     Local::now().format("%Y%m%dT%H%M%S").to_string()
 }
 
-fn ensure_zettel_exists(conn: &mut SqliteConnection, zettel_id: &str) -> Result<Zettel, Error> {
+pub fn ensure_zettel_exists(conn: &mut SqliteConnection, zettel_id: &str) -> Result<Zettel, Error> {
     let zettel = zettels
         .find(zettel_id)
         .select(Zettel::as_select())
