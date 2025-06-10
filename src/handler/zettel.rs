@@ -1,11 +1,11 @@
 use anyhow::Result;
 use diesel::SqliteConnection;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 
 use crate::{
     Body, FrontMatter, Markdown, archive_zettel, create_zettel, dedup_and_warn,
-    ensure_zettel_exists, list_zettels, print_zettels_as_table, view_markdown_with_style,
-    write_to_markdown,
+    ensure_zettel_exists, list_zettels, presenter::view_markdown_with_style,
+    print_zettels_as_table, write_to_markdown,
 };
 
 pub fn zettel_new_handler(
