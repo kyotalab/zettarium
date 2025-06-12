@@ -15,12 +15,19 @@ pub fn ensure_fzf_installed() -> Result<()> {
 pub fn run_fzf(zettel_lines: &[String], config: &AppConfig) -> Result<Option<String>> {
     // fzfプロセス開始
     let mut child = Command::new("fzf")
-        .arg("--preview")
-        .arg(format!(
-            "bat --style=plain --color=always {}/$(echo {{}} | cut -d ' ' -f1).md",
-            config.paths.zettel_dir
-        ))
-        .arg("--preview-window=right:70%")
+        .args(&[
+            "--ansi",
+            "--with-nth=3..", // 3列目以降（タイトルなど）を対象に検索
+            "--delimiter=|",
+            "--preview",
+            &format!(
+                "bat --style=plain --color=always {}/$(echo {{}} | cut -d ' ' -f1).md",
+                config.paths.zettel_dir
+            ),
+            "--preview-window=right:70%",
+            "--prompt",
+            "🔍 Search: ",
+        ])
         .stdin(Stdio::piped())
         .stdout(Stdio::piped())
         .spawn()

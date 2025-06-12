@@ -8,7 +8,7 @@ use std::{
 };
 
 use crate::{
-    AppConfig, Body, FrontMatter, Markdown, NoteType, Zettel, archive_zettel, create_zettel,
+    AppConfig, Body, FrontMatter, Markdown, NoteType, archive_zettel, create_zettel,
     dedup_and_warn, edit_with_editor, ensure_zettel_exists, find_zettel_by_title,
     get_tag_by_zettel_id, list_zettels,
     presenter::{ensure_fzf_installed, run_fzf, view_markdown_with_style},
