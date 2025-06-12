@@ -26,7 +26,6 @@ target/
 /target
 db
 .env
-*.md
 
 # IDE/editor settings
 .vscode/
