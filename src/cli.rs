@@ -71,6 +71,13 @@ pub enum Commands {
         #[arg(long, action = clap::ArgAction::SetTrue)]
         link: bool,
     },
+    // #[command(name = "backlink", alias = "bln")]
+    // #[command(about = "Alias: f \nList backlinks.")]
+    // BackLink {
+    //     id: Option<String>,
+    //     #[arg(long, action = clap::ArgAction::SetTrue)]
+    //     out_going: bool,
+    // },
 }
 
 pub fn dispatch(cli: Cli, conn: &mut SqliteConnection, config: &AppConfig) -> Result<()> {

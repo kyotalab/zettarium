@@ -1,9 +1,10 @@
 use anyhow::{Context, Result};
+use diesel::SqliteConnection;
 use std::io::Write;
 use std::process::{Command, Stdio};
 use which::which;
 
-use crate::AppConfig;
+use crate::{AppConfig, Zettel, list_zettels, parse_markdown};
 
 pub fn ensure_fzf_installed() -> Result<()> {
     if which("fzf").is_err() {
@@ -52,4 +53,22 @@ pub fn run_fzf(zettel_lines: &[String], config: &AppConfig) -> Result<Option<Str
     } else {
         Ok(None) // ユーザーがキャンセルしたなど
     }
+}
+
+pub fn find_backlinks(
+    conn: &mut SqliteConnection,
+    target_id: &str,
+    config: &AppConfig,
+) -> Result<Vec<Zettel>> {
+    let all_zettels = list_zettels(conn, None, None, &[], true, false)?;
+    let mut backlinks = vec![];
+
+    for z in &all_zettels {
+        let (_, body) = parse_markdown(z, config.paths.zettel_dir.clone().into())?;
+        if body.contains(&format!("./{}.md", target_id)) {
+            backlinks.push(z.clone());
+        }
+    }
+
+    Ok(backlinks)
 }
