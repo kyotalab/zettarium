@@ -1,4 +1,5 @@
 use anyhow::{Context, Result};
+use arboard::Clipboard;
 use diesel::SqliteConnection;
 use std::{
     fs,
@@ -7,10 +8,11 @@ use std::{
 };
 
 use crate::{
-    AppConfig, Body, FrontMatter, Markdown, archive_zettel, create_zettel, dedup_and_warn,
-    edit_with_editor, ensure_zettel_exists, get_tag_by_zettel_id, list_zettels,
-    presenter::view_markdown_with_style, print_zettels_as_table, remove_zettel,
-    update_markdown_file, update_zettel, write_to_markdown,
+    AppConfig, Body, FrontMatter, Markdown, NoteType, Zettel, archive_zettel, create_zettel,
+    dedup_and_warn, edit_with_editor, ensure_zettel_exists, find_zettel_by_title,
+    get_tag_by_zettel_id, list_zettels,
+    presenter::{ensure_fzf_installed, run_fzf, view_markdown_with_style},
+    print_zettels_as_table, remove_zettel, update_markdown_file, update_zettel, write_to_markdown,
 };
 
 pub fn zettel_new_handler(
@@ -236,5 +238,68 @@ pub fn zettel_view_handler(
     // Display
     view_markdown_with_style(&zettel, dir.into())?;
 
+    Ok(())
+}
+
+pub fn zettel_find_handler(
+    conn: &mut SqliteConnection,
+    keyword: Option<&str>,
+    title_only: bool,
+    link: bool,
+    config: &AppConfig,
+) -> Result<()> {
+    // fzfコマンドの存在確認
+    ensure_fzf_installed()?;
+
+    let zettels = if let Some(keyword) = keyword {
+        if title_only {
+            find_zettel_by_title(conn, keyword)?
+        } else {
+            list_zettels(conn, None, None, &[], false, false)?
+        }
+    } else {
+        list_zettels(conn, None, None, &[], false, false)?
+    };
+
+    let choices: Vec<String> = zettels
+        .iter()
+        .map(|z| {
+            let short_type = match z.type_ {
+                NoteType::Fleeting => "📝 Fleeting",
+                NoteType::Permanent => "🧠 Permanent",
+                NoteType::Literature => "📚 Literature",
+                NoteType::Structure => "🏗 Structure",
+                NoteType::Index => "🗂 Index",
+            };
+
+            let tags = get_tag_by_zettel_id(conn, &z.id)
+                .unwrap_or_default()
+                .iter()
+                .map(|t| format!("#{}", t.tag_name))
+                .collect::<Vec<_>>()
+                .join(" ");
+
+            format!("{} {} | {} | {}", z.id, short_type, z.title, tags)
+        })
+        .collect();
+
+    if let Some(selected) = run_fzf(&choices, config)? {
+        if link {
+            let id = selected.split_whitespace().next().unwrap_or("");
+            let title = selected.split('-').last().unwrap_or("").trim();
+            let link_syntax = format!("[{}](./{}.md)", title, id);
+            copy_to_clipboard(&link_syntax)?;
+            println!("Copied to clipboard: {}", link_syntax);
+        } else {
+            println!("Selected: {}", selected);
+        }
+    }
+
+    Ok(())
+}
+
+pub fn copy_to_clipboard(text: &str) -> Result<()> {
+    let mut clipboard = Clipboard::new()?;
+    clipboard.set_text(text.to_string())?;
     Ok(())
 }

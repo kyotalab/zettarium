@@ -175,6 +175,16 @@ pub fn remove_zettel(conn: &mut SqliteConnection, zettel_id: &str) -> Result<usi
     Ok(count)
 }
 
+pub fn find_zettel_by_title(
+    conn: &mut SqliteConnection,
+    keyword: &str,
+) -> Result<Vec<Zettel>, Error> {
+    let pattern = format!("%{}%", keyword); // 部分一致検索
+    let results = zettels.filter(title.like(&pattern)).load::<Zettel>(conn)?;
+
+    Ok(results)
+}
+
 pub fn ensure_zettel_exists(conn: &mut SqliteConnection, zettel_id: &str) -> Result<Zettel, Error> {
     let zettel = zettels
         .find(zettel_id)

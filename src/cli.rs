@@ -1,6 +1,6 @@
 use crate::{
     AppConfig, handler::zettel::zettel_new_handler, zettel_archive_handler, zettel_edit_handler,
-    zettel_list_handler, zettel_remove_handler, zettel_view_handler,
+    zettel_find_handler, zettel_list_handler, zettel_remove_handler, zettel_view_handler,
 };
 use anyhow::Result;
 use clap::{Parser, Subcommand};
@@ -62,6 +62,15 @@ pub enum Commands {
     #[command(name = "view", alias = "v")]
     #[command(about = "Alias: v \nView Zettelkasten note in detail.")]
     View { id: String },
+    #[command(name = "find", alias = "f")]
+    #[command(about = "Alias: f \nFind interactively Zettelkasten note by keyword.")]
+    Find {
+        keyword: Option<String>,
+        #[arg(long, help = "Match against title only", action = clap::ArgAction::SetTrue)]
+        title_only: bool,
+        #[arg(long, action = clap::ArgAction::SetTrue)]
+        link: bool,
+    },
 }
 
 pub fn dispatch(cli: Cli, conn: &mut SqliteConnection, config: &AppConfig) -> Result<()> {
@@ -99,6 +108,14 @@ pub fn dispatch(cli: Cli, conn: &mut SqliteConnection, config: &AppConfig) -> Re
         }
         Commands::View { id } => {
             zettel_view_handler(conn, &id, config)?;
+            Ok(())
+        }
+        Commands::Find {
+            keyword,
+            title_only,
+            link,
+        } => {
+            zettel_find_handler(conn, keyword.as_deref(), title_only, link, config)?;
             Ok(())
         }
     }
