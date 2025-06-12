@@ -1,6 +1,7 @@
 use crate::{
-    AppConfig, handler::zettel::zettel_new_handler, zettel_archive_handler, zettel_edit_handler,
-    zettel_find_handler, zettel_list_handler, zettel_remove_handler, zettel_view_handler,
+    AppConfig, handler::zettel::zettel_new_handler, init_handler, zettel_archive_handler,
+    zettel_edit_handler, zettel_find_handler, zettel_list_handler, zettel_remove_handler,
+    zettel_view_handler,
 };
 use anyhow::Result;
 use clap::{Parser, Subcommand};
@@ -84,7 +85,10 @@ pub enum Commands {
 
 pub fn dispatch(cli: Cli, conn: Option<&mut SqliteConnection>, config: &AppConfig) -> Result<()> {
     match cli.command {
-        Commands::Init => Ok(()),
+        Commands::Init => {
+            init_handler(config)?;
+            Ok(())
+        }
         Commands::New { title, type_, tags } => {
             let conn = conn.expect("DB connection not available");
             zettel_new_handler(conn, &title, &type_, &tags, config)?;

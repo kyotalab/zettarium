@@ -29,12 +29,12 @@ pub fn init_handler(config: &AppConfig) -> Result<()> {
     if !db_path.exists() {
         let mut conn = SqliteConnection::establish(db_path.to_str().unwrap())?;
         run_migrations(&mut conn)?; // Dieselなどで初期テーブル作成
-        println!("✔ Created database at {}", db_path.display());
+        println!("Created database at {}", db_path.display());
     } else {
-        println!("⚠ Database already exists: {}", db_path.display());
+        println!("Warning: Database already exists: {}", db_path.display());
     }
 
-    println!("🎉 zettarium initialized successfully.");
+    println!("zettarium initialized successfully.");
     Ok(())
 }
 
