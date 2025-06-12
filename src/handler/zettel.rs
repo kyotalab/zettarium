@@ -1,6 +1,6 @@
 use anyhow::{Context, Result};
 use arboard::Clipboard;
-use diesel::SqliteConnection;
+use diesel::{Connection, SqliteConnection};
 use std::{
     fs,
     io::{Write, stdin, stdout},
@@ -12,8 +12,31 @@ use crate::{
     dedup_and_warn, edit_with_editor, ensure_zettel_exists, find_zettel_by_title,
     get_tag_by_zettel_id, list_zettels,
     presenter::{ensure_fzf_installed, run_fzf, view_markdown_with_style},
-    print_zettels_as_table, remove_zettel, update_markdown_file, update_zettel, write_to_markdown,
+    print_zettels_as_table, remove_zettel,
+    store::run_migrations,
+    update_markdown_file, update_zettel, write_to_markdown,
 };
+
+pub fn init_handler(config: &AppConfig) -> Result<()> {
+    use std::fs;
+
+    // ディレクトリ作成
+    fs::create_dir_all(&config.paths.zettel_dir)?;
+    fs::create_dir_all(&config.paths.archive_dir)?;
+
+    // DBファイル作成とテーブル初期化
+    let db_path: PathBuf = config.paths.db_path.clone().into(); // 例: ~/.local/share/zettarium/zettarium.db
+    if !db_path.exists() {
+        let mut conn = SqliteConnection::establish(db_path.to_str().unwrap())?;
+        run_migrations(&mut conn)?; // Dieselなどで初期テーブル作成
+        println!("✔ Created database at {}", db_path.display());
+    } else {
+        println!("⚠ Database already exists: {}", db_path.display());
+    }
+
+    println!("🎉 zettarium initialized successfully.");
+    Ok(())
+}
 
 pub fn zettel_new_handler(
     conn: &mut SqliteConnection,

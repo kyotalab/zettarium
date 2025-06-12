@@ -20,8 +20,9 @@ A minimal, keyboard-centric Zettelkasten CLI for structured thinking and lifelon
 You'll need to have:
 
 - Rust (`cargo`)
-- [`fzf`](https://github.com/junegunn/fzf)
-- [`bat`](https://github.com/sharkdp/bat)
+- [fzf](https://github.com/junegunn/fzf): Interactive search
+- [bat](https://github.com/sharkdp/bat): Markdown preview
+- [sqlite3](https://www.sqlite.org/index.html): Local database engine
 
 ```bash
 brew install fzf bat

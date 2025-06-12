@@ -14,6 +14,8 @@ pub struct Cli {
 
 #[derive(Subcommand)]
 pub enum Commands {
+    #[command(name = "init", about = "Initialize zettarium environment.")]
+    Init,
     #[command(name = "new", alias = "n")]
     #[command(about = "Alias: n \nCreate a new Zettelkasten note.")]
     New {
@@ -80,9 +82,11 @@ pub enum Commands {
     // },
 }
 
-pub fn dispatch(cli: Cli, conn: &mut SqliteConnection, config: &AppConfig) -> Result<()> {
+pub fn dispatch(cli: Cli, conn: Option<&mut SqliteConnection>, config: &AppConfig) -> Result<()> {
     match cli.command {
+        Commands::Init => Ok(()),
         Commands::New { title, type_, tags } => {
+            let conn = conn.expect("DB connection not available");
             zettel_new_handler(conn, &title, &type_, &tags, config)?;
             Ok(())
         }
@@ -93,6 +97,7 @@ pub fn dispatch(cli: Cli, conn: &mut SqliteConnection, config: &AppConfig) -> Re
             all,
             archived,
         } => {
+            let conn = conn.expect("DB connection not available");
             zettel_list_handler(conn, id.as_deref(), type_.as_deref(), &tags, all, archived)?;
             Ok(())
         }
@@ -102,18 +107,22 @@ pub fn dispatch(cli: Cli, conn: &mut SqliteConnection, config: &AppConfig) -> Re
             type_,
             tags,
         } => {
+            let conn = conn.expect("DB connection not available");
             zettel_edit_handler(conn, &id, title.as_deref(), type_.as_deref(), &tags, config)?;
             Ok(())
         }
         Commands::Archive { id } => {
+            let conn = conn.expect("DB connection not available");
             zettel_archive_handler(conn, &id, config)?;
             Ok(())
         }
         Commands::Remove { id, force } => {
+            let conn = conn.expect("DB connection not available");
             let _result = zettel_remove_handler(conn, &id, force, config)?;
             Ok(())
         }
         Commands::View { id } => {
+            let conn = conn.expect("DB connection not available");
             zettel_view_handler(conn, &id, config)?;
             Ok(())
         }
@@ -122,6 +131,7 @@ pub fn dispatch(cli: Cli, conn: &mut SqliteConnection, config: &AppConfig) -> Re
             title_only,
             link,
         } => {
+            let conn = conn.expect("DB connection not available");
             zettel_find_handler(conn, keyword.as_deref(), title_only, link, config)?;
             Ok(())
         }
