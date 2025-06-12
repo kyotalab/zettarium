@@ -24,9 +24,31 @@ You'll need to have:
 - [bat](https://github.com/sharkdp/bat): Markdown preview
 - [sqlite3](https://www.sqlite.org/index.html): Local database engine
 
-```bash
+### Homebrew (Recommended)
+
+```sh
+brew tap kyotalab/tap
+brew install zettarium
+```
+
+To upgrade:
+
+```sh
+brew upgrade zettarium
+```
+
+Install required tools:
+
+```sh
 brew install fzf bat
-cargo install zettarium
+```
+
+### From Source
+
+```sh
+git clone https://github.com/kyotalab/zettarium.git
+cd zettarium
+cargo install --path .
 ```
 
 ---
@@ -43,12 +65,23 @@ Example:
 
 ```toml
 [paths]
+db_path = "/Users/you/Zettels/zettel.db"
 zettel_dir = "/Users/you/Zettels"
 archive_dir = "/Users/you/Zettels/archive"
 
 [editor]
 editor = "nvim"
 ```
+
+---
+
+## First-Time Setup
+
+```sh
+z init
+```
+
+This creates `db_path = "/Users/you/Zettels/zettel.db"`:
 
 ---
 
