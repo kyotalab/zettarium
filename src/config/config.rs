@@ -4,8 +4,8 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Deserialize)]
 pub struct AppConfig {
-    pub editor: String,
     pub paths: PathsConfig,
+    pub editor: EditorConfig,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -14,6 +14,11 @@ pub struct PathsConfig {
     pub db_path: String,
     pub zettel_dir: String,
     pub archive_dir: String,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct EditorConfig {
+    pub editor: String,
 }
 
 pub fn load_config() -> Result<AppConfig, ConfigError> {

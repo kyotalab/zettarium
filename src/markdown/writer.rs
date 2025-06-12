@@ -31,7 +31,7 @@ pub fn edit_with_editor(
     let zettel = ensure_zettel_exists(conn, id)?;
     let path = PathBuf::from(format!("{}/{}.md", &config.paths.zettel_dir, zettel.id));
 
-    let editor = &config.editor;
+    let editor = &config.editor.editor;
     let status = std::process::Command::new(editor).arg(&path).status()?;
 
     if !status.success() {
