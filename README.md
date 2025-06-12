@@ -1,3 +1,5 @@
+![logo](zettarium.jpg)
+
 # `zettarium` – Zettelkasten in Your Terminal
 
 A minimal, keyboard-centric Zettelkasten CLI for structured thinking and lifelong note-taking.
