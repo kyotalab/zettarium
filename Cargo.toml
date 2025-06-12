@@ -2,12 +2,22 @@
 name = "zettarium"
 version = "0.1.0"
 edition = "2024"
+description = "A minimal, command-line Zettelkasten note manager."
+license = "MIT"
+readme = "README.md"
+repository = "https://github.com/kyotalab/zettarium"
+homepage = "https://github.com/kyotalab/zettarium"
+documentation = "https://github.com/kyotalab/zettarium#readme"
+keywords = ["zettelkasten", "cli", "notes", "productivity"]
+categories = ["command-line-utilities", "text-editors", "productivity"]
+authors = ["Kyota <jagbvg.eptpeox@gmail.com>"]
+exclude = ["target", "examples", "tests"]
 
 [dependencies]
 anyhow = "1.0.98"
 chrono = {version = "0.4.41", features = ["serde"]}
 clap = {version = "4.5.39", features = ["derive"]}
-diesel = {version = "2.2.10", features = ["sqlite", "returning_clauses_for_sqlite_3_35", "chrono"]}
+diesel = {version = "2.2.10", features = ["sqlite", "returning_clauses_for_sqlite_3_35", "chrono", "r2d2"]}
 dotenvy = "0.15.7"
 serde = {version = "1.0.219", features = ["derive"]}
 serde_yaml = "0.9.34"
